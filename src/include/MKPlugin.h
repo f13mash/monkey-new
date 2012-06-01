@@ -32,6 +32,7 @@
 #include "mk_file.h"
 #include "mk_socket.h"
 #include "mk_macros.h"
+#include "mk_info.h"
 
 /* global vars */
 struct plugin_api *mk_api;
