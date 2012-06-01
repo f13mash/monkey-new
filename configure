@@ -567,6 +567,13 @@ fi
 # Creando include/mk_info.h
 create_info()
 {
+local MK_PF_GENERIC_ID=1
+local MK_PF_ANDROID_ID=2
+local MK_PF_ID=$MK_PF_GENERIC_ID
+if [ $platform == "android" ]; then
+   MK_PF_ID=$MK_PF_ANDROID_ID 
+fi
+
 cat > $INCDIR/mk_info.h <<EOF
 #ifndef MK_INFO_H
 #define MK_INFO_H
@@ -582,6 +589,10 @@ cat > $INCDIR/mk_info.h <<EOF
                                 __MONKEY_PATCHLEVEL__)
 #define VERSION "$__MONKEY__.$__MONKEY_MINOR__.$__MONKEY_PATCHLEVEL__"
 #define MONKEY_PATH_CONF "$sysconfdir"
+
+#define MK_PLATFORM_GENERIC $MK_PF_GENERIC_ID
+#define MK_PLATFORM_ANDROID $MK_PF_ANDROID_ID
+#define MK_PLATFORM         $MK_PF_ID
 
 #endif
 EOF
