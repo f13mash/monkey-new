@@ -45,12 +45,13 @@ static const char MONKEY_BUILT[] = __DATE__ " " __TIME__;
 static const char MONKEY_BUILT[] = "Unknown";
 #endif
 
-static void mk_thread_keys_init(void)
+void mk_thread_keys_init(void)
 {
     /* Create thread keys */
     pthread_key_create(&worker_sched_node, NULL);
     pthread_key_create(&request_list, NULL);
     pthread_key_create(&epoll_fd, NULL);
+    pthread_key_create(&mk_epoll_state_k, NULL);
     pthread_key_create(&mk_cache_iov_header, NULL);
     pthread_key_create(&mk_cache_header_lm, NULL);
     pthread_key_create(&mk_cache_header_cl, NULL);
@@ -172,8 +173,11 @@ int main(int argc, char **argv)
     /* Register PID of Monkey */
     mk_utils_register_pid();
 
+    /* Clock init that must happen before starting threads */
+    mk_clock_sequential_init();
+
     /* Workers: logger and clock */
-    mk_utils_worker_spawn((void *) mk_clock_worker_init);
+    mk_utils_worker_spawn((void *) mk_clock_worker_init, NULL);
 
     /* Init mk pointers */
     mk_mem_pointers_init();
@@ -195,6 +199,21 @@ int main(int argc, char **argv)
 
     /* Launch monkey http workers */
     mk_server_launch_workers();
+
+    /* Wait until all workers report as ready */
+    while (1) {
+        int i, ready = 0;
+
+        pthread_mutex_lock(&mutex_worker_init);
+        for (i = 0; i < config->workers; i++) {
+            if (sched_list[i].initialized)
+                ready++;
+        }
+        pthread_mutex_unlock(&mutex_worker_init);
+
+        if (ready == config->workers) break;
+        usleep(10000);
+    }
 
     /* Server loop, let's listen for incomming clients */
     mk_server_loop(config->server_fd);

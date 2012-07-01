@@ -42,6 +42,9 @@
 #include "mk_utils.h"
 #include "mk_macros.h"
 
+static pthread_mutex_t mutex_sched_init = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t mutex_worker_init = PTHREAD_MUTEX_INITIALIZER;
+
 /*
  * Returns the worker id which should take a new incomming connection,
  * it returns the worker id with less active connections
@@ -98,7 +101,7 @@ inline int mk_sched_add_client(int remote_fd)
 
     MK_TRACE("[FD %i] Balance to WID %i", remote_fd, sched->idx);
 
-    r  = mk_epoll_add(sched->epoll_fd, remote_fd, MK_EPOLL_WRITE,
+    r  = mk_epoll_add(sched->epoll_fd, remote_fd, MK_EPOLL_READ,
                       MK_EPOLL_LEVEL_TRIGGERED);
 
     /* If epoll has failed, decrement the active connections counter */
@@ -176,6 +179,7 @@ static void *mk_sched_launch_worker_loop(void *thread_conf)
     mk_mem_free(thread_conf);
 
     /* Plugin thread context calls */
+    mk_epoll_state_init();
     mk_plugin_event_init_list();
     mk_plugin_core_thread();
 
@@ -216,6 +220,12 @@ int mk_sched_register_thread(int efd)
     struct sched_list_node *sl;
     static int wid = 0;
 
+    /*
+     * If this thread slept inside this section, some other thread may touch wid.
+     * So protect it with a mutex, only one thread may handle wid.
+     */
+    pthread_mutex_lock(&mutex_sched_init);
+
     sl = &sched_list[wid];
     sl->idx = wid++;
     sl->tid = pthread_self();
@@ -232,6 +242,8 @@ int mk_sched_register_thread(int efd)
      */
     sl->pid = syscall(__NR_gettid);
     sl->epoll_fd = efd;
+
+    pthread_mutex_unlock(&mutex_sched_init);
 
     mk_list_init(&sl->busy_queue);
     mk_list_init(&sl->av_queue);
@@ -255,7 +267,7 @@ int mk_sched_register_thread(int efd)
  * Create thread which will be listening
  * for incomings file descriptors
  */
-int mk_sched_launch_thread(int max_events)
+int mk_sched_launch_thread(int max_events, pthread_t *tout)
 {
     int efd;
     pthread_t tid;
@@ -280,6 +292,8 @@ int mk_sched_launch_thread(int max_events)
         perror("pthread_create");
         return -1;
     }
+
+    *tout = tid;
 
     return 0;
 }
@@ -325,10 +339,12 @@ int mk_sched_remove_client(struct sched_list_node *sched, int remote_fd)
     struct sched_connection *sc;
 
     /*
-     * Close socket and change status: we do not invoke mk_epoll_del()
+     * Close socket and change status: we must invoke mk_epoll_del()
      * because when the socket is closed is cleaned from the queue by
-     * the Kernel.
+     * the Kernel at its leisure, and we may get false events if we rely
+     * on that.
      */
+    mk_epoll_del(sched->epoll_fd, remote_fd);
     close(remote_fd);
 
     sc = mk_sched_get_connection(sched, remote_fd);

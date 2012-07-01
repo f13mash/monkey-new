@@ -35,12 +35,12 @@
 
 struct sched_connection
 {
-    int status;
-    int socket;
+    int socket;           /* file descriptor   */
+    int status;           /* connection status */
+    uint32_t events;      /* epoll events      */
+    time_t arrive_time;   /* arrived time      */
 
-    time_t arrive_time;
-
-    struct mk_list _head;
+    struct mk_list _head; /* list head         */
 };
 
 /* Global struct */
@@ -56,6 +56,7 @@ struct sched_list_node
     pthread_t tid;
     pid_t pid;
     int epoll_fd;
+    unsigned char initialized;
 
     struct client_session *request_handler;
 };
@@ -73,9 +74,11 @@ typedef struct
 pthread_key_t epoll_fd;
 pthread_key_t worker_sched_node;
 
+extern pthread_mutex_t mutex_worker_init;
+
 void mk_sched_init();
 int mk_sched_register_thread(int epoll_fd);
-int mk_sched_launch_thread(int max_events);
+int mk_sched_launch_thread(int max_events, pthread_t *tout);
 void *mk_sched_launch_epoll_loop(void *thread_conf);
 struct sched_list_node *mk_sched_get_handler_owner(void);
 

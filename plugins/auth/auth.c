@@ -36,9 +36,7 @@ MONKEY_PLUGIN("auth",              /* shortname */
               VERSION,             /* version */
               MK_PLUGIN_STAGE_30); /* hooks */
 
-struct mk_config *conf;
-
-int mk_auth_validate_user(struct users_file *users,
+static int mk_auth_validate_user(struct users_file *users,
                           const char *credentials, unsigned int len)
 {
     int sep;
@@ -102,7 +100,7 @@ int mk_auth_validate_user(struct users_file *users,
     return -1;
 }
 
-int _mkp_init(void **api, char *confdir)
+int _mkp_init(struct plugin_api **api, char *confdir)
 {
     mk_api = *api;
 

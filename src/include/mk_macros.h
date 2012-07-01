@@ -61,6 +61,13 @@
 #ifndef ARRAY_SIZE
 # define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
 #endif
+
+#ifdef __GNUC__ /* GCC supports this since 2.3. */
+ #define PRINTF_WARNINGS(a,b) __attribute__ ((format (printf, a, b)))
+#else
+ #define PRINTF_WARNINGS(a,b)
+#endif
+
 /*
  * Validation macros
  * -----------------
@@ -100,5 +107,11 @@
 #define MK_NET_WILDCARD(addr,net) (MK_NET_BROADCAST(addr,net) ^ MK_NET_NETWORK(addr,net))
 #define MK_NET_HOSTMIN(addr,net) net == 31 ? MK_NET_NETWORK(addr,net) : (MK_NET_NETWORK(addr,net) + 0x01000000)
 #define MK_NET_HOSTMAX(addr,net) net == 31 ? MK_NET_BROADCAST(addr,net) : (MK_NET_BROADCAST(addr,net) - 0x01000000);
+
+#if __GNUC__ >= 4
+ #define MK_EXPORT __attribute__ ((visibility ("default")))
+#else
+ #define MK_EXPORT
+#endif
 
 #endif

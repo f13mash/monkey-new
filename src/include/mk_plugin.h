@@ -116,12 +116,6 @@ struct plugin_network_io
     int (*server) (int, char *);
 };
 
-struct plugin_network_ip
-{
-    int (*addr) (int);
-    int (*maxlen) ();
-};
-
 struct plugin
 {
     char *shortname;
@@ -188,7 +182,7 @@ struct plugin_api
     struct sched_list_node *sched_list;
 
     /* Error helper */
-    void (*_error) (int, const char *, ...);
+    void (*_error) (int, const char *, ...) PRINTF_WARNINGS(2,3);
 
     /* HTTP request function */
     int   (*http_request_end) (int);
@@ -206,7 +200,7 @@ struct plugin_api
     int   (*str_itop) (int, mk_pointer *);
     int   (*str_search) (const char *, const char *, int);
     int   (*str_search_n) (const char *, const char *, int, int);
-    char *(*str_build) (char **, unsigned long *, const char *, ...);
+    char *(*str_build) (char **, unsigned long *, const char *, ...) PRINTF_WARNINGS(3,4);
     char *(*str_dup) (const char *);
     char *(*str_copy_substr) (const char *, int, int);
     struct mk_list *(*str_split_line) (const char *);
@@ -269,7 +263,7 @@ struct plugin_api
                                                       int);
 
     /* worker's functions */
-    pthread_t (*worker_spawn) (void (*func) (void *));
+    pthread_t (*worker_spawn) (void (*func) (void *), void *);
     int (*worker_rename) (const char *);
 
     /* event's functions */

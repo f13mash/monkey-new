@@ -1,6 +1,6 @@
 /*  Monkey HTTP Daemon
  *  ------------------
- *  Copyright (C) 2001-2012, Eduardo Silva P. <edsiper@gmail.com>
+ *  Copyright (C) 2012, Lauri Kasanen
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,5 +17,32 @@
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 
-/* Current official protocol */
-#define MONKEY_HTTP_PROTOCOL HTTP_PROTOCOL_11
+#include "cgi.h"
+
+struct cgi_request *cgi_req_create(int fd, int socket)
+{
+    struct cgi_request *newcgi = mk_api->mem_alloc_z(sizeof(struct cgi_request));
+    if (!newcgi) return NULL;
+
+    newcgi->fd = fd;
+    newcgi->socket = socket;
+
+    return newcgi;
+}
+
+void cgi_req_add(struct cgi_request *r)
+{
+    struct mk_list *list = pthread_getspecific(_mkp_data);
+
+    mk_list_add(&r->_head, list);
+}
+
+int cgi_req_del(struct cgi_request *r)
+{
+    if (!r) return 1;
+
+    mk_list_del(&r->_head);
+    free(r);
+
+    return 0;
+}

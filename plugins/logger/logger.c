@@ -33,9 +33,6 @@
 #include <pthread.h>
 #include <unistd.h>
 
-/* Monkey Plugin Interface */
-#include "MKPlugin.h"
-
 /* Local Headers */
 #include "logger.h"
 #include "pointers.h"
@@ -70,7 +67,7 @@ static struct status_response response_codes[] = {
 };
 
 
-char *mk_logger_match_by_fd(int fd)
+static char *mk_logger_match_by_fd(int fd)
 {
     struct mk_list *head;
     struct log_target *entry;
@@ -89,7 +86,7 @@ char *mk_logger_match_by_fd(int fd)
     return NULL;
 }
 
-struct log_target *mk_logger_match_by_host(struct host *host)
+static struct log_target *mk_logger_match_by_host(struct host *host)
 {
     struct mk_list *head;
     struct log_target *entry;
@@ -104,12 +101,12 @@ struct log_target *mk_logger_match_by_host(struct host *host)
     return NULL;
 }
 
-struct iov *mk_logger_get_cache()
+static struct iov *mk_logger_get_cache()
 {
     return pthread_getspecific(_mkp_data);
 }
 
-void *mk_logger_worker_init(void *args)
+static void *mk_logger_worker_init(void *args)
 {
     int efd, max_events = mk_api->config->nhosts;
     int i, bytes, err;
@@ -222,7 +219,7 @@ void *mk_logger_worker_init(void *args)
             slen = splice(events[i].data.fd, NULL, flog,
                           NULL, bytes, SPLICE_F_MOVE);
             if (slen == -1) {
-                mk_warn("Could not write to log file: splice() = %i", slen);
+                mk_warn("Could not write to log file: splice() = %ld", slen);
             }
 
             PLUGIN_TRACE("written %i bytes", bytes);
@@ -231,7 +228,7 @@ void *mk_logger_worker_init(void *args)
     }
 }
 
-int mk_logger_read_config(char *path)
+static int mk_logger_read_config(char *path)
 {
     int timeout;
     char *logfilename = NULL;
@@ -275,7 +272,7 @@ int mk_logger_read_config(char *path)
     return 0;
 }
 
-void mk_logger_print_details(void)
+static void mk_logger_print_details(void)
 {
     time_t now;
     struct tm *current;
@@ -295,7 +292,7 @@ void mk_logger_print_details(void)
     fflush(stdout);
 }
 
-int _mkp_init(void **api, char *confdir)
+int _mkp_init(struct plugin_api **api, char *confdir)
 {
     int fd;
     mk_api = *api;
@@ -346,7 +343,7 @@ void _mkp_exit()
     mk_api->mem_free(mk_logger_master_path);
 }
 
-void _mkp_core_prctx()
+int _mkp_core_prctx(struct server_config *config)
 {
     struct log_target *new;
     struct host *entry_host;
@@ -405,7 +402,7 @@ void _mkp_core_prctx()
         }
     }
 
-    mk_api->worker_spawn((void *) mk_logger_worker_init);
+    mk_api->worker_spawn((void *) mk_logger_worker_init, NULL);
 }
 
 void _mkp_core_thctx()

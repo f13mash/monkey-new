@@ -628,7 +628,7 @@ void mk_plugin_request_handler_add(struct session_request *sr, struct plugin *p)
 
 void mk_plugin_request_handler_del(struct session_request *sr, struct plugin *p)
 {
-    if (!sr->handled_by) {
+    if (!sr->handled_by || sr->handled_by != p) {
         return;
     }
 
@@ -718,6 +718,9 @@ int mk_plugin_event_del(int socket)
             mk_list_del(head);
             mk_mem_free(node);
             mk_plugin_event_set_list(list);
+
+            struct sched_list_node *sched = mk_sched_get_thread_conf();
+            mk_epoll_del(sched->epoll_fd, socket);
             return 0;
         }
     }

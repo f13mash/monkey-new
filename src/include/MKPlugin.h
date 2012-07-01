@@ -35,13 +35,13 @@
 #include "mk_info.h"
 
 /* global vars */
-struct plugin_api *mk_api;
-struct plugin_info _plugin_info;
+struct plugin_api MK_EXPORT *mk_api;
+struct plugin_info MK_EXPORT _plugin_info;
 
-mk_plugin_key_t _mkp_data;
+mk_plugin_key_t MK_EXPORT _mkp_data;
 
 #define MONKEY_PLUGIN(a, b, c, d)                   \
-    struct plugin_info _plugin_info = {a, b, c, d}
+    struct plugin_info MK_EXPORT _plugin_info = {a, b, c, d}
 
 #ifdef TRACE
 #define PLUGIN_TRACE(...) \
@@ -54,6 +54,36 @@ mk_plugin_key_t _mkp_data;
 #else
 #define PLUGIN_TRACE(...) do {} while(0)
 #endif
+
+/* Hook defines */
+int MK_EXPORT _mkp_init(struct plugin_api **api, char *confdir);
+void MK_EXPORT _mkp_exit();
+int MK_EXPORT _mkp_core_prctx(struct server_config *config);
+void MK_EXPORT _mkp_core_thctx();
+int MK_EXPORT _mkp_stage_10(unsigned int socket, struct sched_connection *conx);
+int MK_EXPORT _mkp_stage_20(struct client_session *cs, struct session_request *sr);
+int MK_EXPORT _mkp_stage_30(struct plugin *plugin, struct client_session *cs,
+                            struct session_request *sr);
+int MK_EXPORT _mkp_stage_40(struct client_session *cs, struct session_request *sr);
+int MK_EXPORT _mkp_stage_50(int sockfd);
+int MK_EXPORT _mkp_network_io_accept(int server_fd);
+int MK_EXPORT _mkp_network_io_read(int socket_fd, void *buf, int count);
+int MK_EXPORT _mkp_network_io_write(int socket_fd, const void *buf, size_t count);
+int MK_EXPORT _mkp_network_io_writev(int socket_fd, struct mk_iov *mk_io);
+int MK_EXPORT _mkp_network_io_close(int socket_fd);
+int MK_EXPORT _mkp_network_io_connect(char *host, int port);
+int MK_EXPORT _mkp_network_io_send_file(int socket_fd, int file_fd, off_t *file_offset,
+                                        size_t file_count);
+int MK_EXPORT _mkp_network_io_create_socket(int domain, int type, int protocol);
+int MK_EXPORT _mkp_network_io_bind(int socket_fd, const struct sockaddr *addr,
+                                   socklen_t addrlen, int backlog);
+int MK_EXPORT _mkp_network_io_server(int port, char *listen_addr);
+int MK_EXPORT _mkp_event_read(int sockfd);
+int MK_EXPORT _mkp_event_write(int sockfd);
+int MK_EXPORT _mkp_event_error(int sockfd);
+int MK_EXPORT _mkp_event_close(int sockfd);
+int MK_EXPORT _mkp_event_timeout(int sockfd);
+
 
 /* 
  * Redefine messages macros 
