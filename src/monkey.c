@@ -36,6 +36,9 @@
 #include "mk_macros.h"
 #include "mk_env.h"
 
+#include "com_monkey_control_MonkeyStarter.h"
+
+
 #if defined(__DATE__) && defined(__TIME__)
 static const char MONKEY_BUILT[] = __DATE__ " " __TIME__;
 #else
@@ -67,7 +70,7 @@ static void mk_details(void)
            config->workers * config->worker_capacity);
     printf("\n* Transport layer by %s in %s mode\n",
            config->transport_layer_plugin->shortname,
-           config->transport);
+           config->transport);//main(0, NULL);
     fflush(stdout);
 }
 
@@ -99,15 +102,17 @@ static void mk_help(int rc)
 int main(int argc, char **argv)
 {
     int opt, run_daemon = 0;
-    char *file_config = NULL;
+        char *file_config = NULL;
 
-    static const struct option long_opts[] = {
-        { "configdir", required_argument, NULL, 'c' },
-		{ "daemon",	   no_argument,       NULL, 'D' },
-        { "version",   no_argument,       NULL, 'v' },
-		{ "help",	   no_argument,       NULL, 'h' },
-		{ NULL, 0, NULL, 0 }
-	};
+        printf("started . . \n");
+
+        static const struct option long_opts[] = {
+            { "configdir", required_argument, NULL, 'c' },
+    		{ "daemon",	   no_argument,       NULL, 'D' },
+            { "version",   no_argument,       NULL, 'v' },
+    		{ "help",	   no_argument,       NULL, 'h' },
+    		{ NULL, 0, NULL, 0 }
+    	};
 
     while ((opt = getopt_long(argc, argv, "DSvhc:", long_opts, NULL)) != -1) {
         switch (opt) {
@@ -150,7 +155,9 @@ int main(int argc, char **argv)
 
     mk_version();
     mk_signal_init();
+    printf("configure start \n");
     mk_config_start_configure();
+    printf("configure end \n");
     mk_sched_init();
     mk_plugin_init();
 
@@ -195,3 +202,81 @@ int main(int argc, char **argv)
     mk_mem_free(config);
     return 0;
 }
+
+
+JNIEXPORT jint JNICALL Java_com_monkey_control_MonkeyStarter_startMonkey
+  (JNIEnv *env, jobject obj){
+    int argc=1;
+    char *argv[]={"monkey"};
+    int opt, run_daemon = 0;
+        char *file_config = NULL;
+
+        printf("started . . \n");
+
+        static const struct option long_opts[] = {
+            { "configdir", required_argument, NULL, 'c' },
+    		{ "daemon",	   no_argument,       NULL, 'D' },
+            { "version",   no_argument,       NULL, 'v' },
+    		{ "help",	   no_argument,       NULL, 'h' },
+    		{ NULL, 0, NULL, 0 }
+    	};
+        while ((opt = getopt_long(argc, argv, "DSvhc:", long_opts, NULL)) != -1) {
+            switch (opt) {
+            case 'v':
+                mk_version();
+                exit(EXIT_SUCCESS);
+            case 'h':
+                mk_help(EXIT_SUCCESS);
+            case 'D':
+                run_daemon = 1;
+                break;
+            case 'c':
+                file_config = optarg;
+                break;
+            case '?':
+                printf("Monkey: Invalid option or option needs an argument.\n");
+                mk_help(EXIT_FAILURE);
+            }
+        }
+
+        printf("asdasdas . . . \n\r");
+        fflush(stdout);
+        config = mk_mem_malloc_z(sizeof(struct server_config));
+
+         if (!file_config)
+             config->file_config = MONKEY_PATH_CONF;
+         else
+             config->file_config = file_config;
+
+         if (run_daemon)
+             config->is_daemon = MK_TRUE;
+         else
+             config->is_daemon = MK_FALSE;
+
+     #ifdef TRACE
+         monkey_init_time = time(NULL);
+         MK_TRACE("Monkey TRACE is enabled");
+         env_trace_filter = getenv("MK_TRACE_FILTER");
+         pthread_mutex_init(&mutex_trace, (pthread_mutexattr_t *) NULL);
+     #endif
+
+         mk_version();
+          mk_signal_init();
+          printf("configure start \n");
+          mk_config_start_configure();
+          printf("configure end \n");
+          mk_sched_init();
+          mk_plugin_init();
+
+
+    printf("testingnging out.a.sd \n\r");
+    fflush(stdout);
+    return (jint)13;
+}
+
+JNIEXPORT jint JNICALL Java_com_monkey_control_MonkeyStarter_stopMonkey
+(JNIEnv *env, jobject obj){
+    return (jint)26;
+}
+
+

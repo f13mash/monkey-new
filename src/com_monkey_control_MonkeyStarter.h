@@ -18,16 +18,16 @@ extern "C" {
  * Method:    startMonkey
  * Signature: ()I
  */
-JNIEXPORT jint JNICALL Java_com_monkey_control_MonkeyStarter_startMonkey
-  (JNIEnv *, jclass);
+extern JNIEXPORT jint JNICALL Java_com_monkey_control_MonkeyStarter_startMonkey
+  (JNIEnv *, jobject);
 
 /*
  * Class:     com_monkey_control_MonkeyStarter
  * Method:    stopMonkey
  * Signature: ()I
  */
-JNIEXPORT jint JNICALL Java_com_monkey_control_MonkeyStarter_stopMonkey
-  (JNIEnv *, jclass);
+extern JNIEXPORT jint JNICALL Java_com_monkey_control_MonkeyStarter_stopMonkey
+  (JNIEnv *, jobject);
 
 #ifdef __cplusplus
 }

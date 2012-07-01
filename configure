@@ -391,11 +391,16 @@ elif [ $platform == "android" ]; then
     libs=""
 fi
 
+if [ $platform == "generic" ]; then
+   	shrd=""
+elif [ $platform == "android" ]; then
+    shrd="-shared"
+fi
 cat > src/Makefile<<EOF
 _PATH   = \$(patsubst \$(monkey_root)/%, %, \$(CURDIR))
 CC	= @echo "  CC   \$(_PATH)/\$@"; $CC
 CC_QUIET= @echo -n; $CC
-CFLAGS	= $CFLAGS
+CFLAGS	= $CFLAGS $shrd
 DEFS    = $DEFS
 INCDIR  = ./include
 LDFLAGS	= $LDFLAGS
